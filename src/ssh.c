@@ -1,6 +1,7 @@
 #include <ssh.h>
+#include <error.h>
 
-ssh_session create_ssh_session(const char *host, int verbosity, int port)
+ssh_session create_ssh_session(ssh_error *error, const char *host, int verbosity, int port)
 {
 	ssh_session session = ssh_new();
 	if(session == NULL)
@@ -9,10 +10,11 @@ ssh_session create_ssh_session(const char *host, int verbosity, int port)
 	ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 	ssh_options_set(session, SSH_OPTIONS_PORT, &port);
 
+	*error = SSH_SUCCESS;
 	return session;
 }
 
-int verify_ssh_host(ssh_session session)
+ssh_error verify_ssh_host(ssh_session session)
 {
 	int hlen;
 	unsigned char *hash = NULL;
@@ -21,6 +23,6 @@ int verify_ssh_host(ssh_session session)
 
 	hlen = ssh_get_pubkey_hash(session, &hash);
 	if(hlen < 0)
-		return -1; /* TODO: Error codes */
-	return 0;
+		return SSH_LENGTH_ERR;
+	return SSH_SUCCESS;
 }
