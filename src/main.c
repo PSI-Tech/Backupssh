@@ -1,7 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-int main()
+int main(int argc, char *argv[])
 {
-	printf("Hello World!\n");
+	if (argc < 3) {
+		printf("Too little arguments!\n");
+		exit(1);
+	}
+
 	return 0;
 }
