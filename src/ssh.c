@@ -54,7 +54,7 @@ int is_host_known(char *hash)
 		fseek(fp, 1, SEEK_CUR);
 		fgets(&buf[0], 4096, fp);
 		if(strcmp(&buf[0], hash) == 0)
-		return BACKUPSSH_HOST_KNOWN;
+			return BACKUPSSH_HOST_KNOWN;
 	} while(fgetc(fp) != EOF);
 
 	return BACKUPSSH_HOST_UNKNOWN;
