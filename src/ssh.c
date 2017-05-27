@@ -2,6 +2,7 @@
 #include <error.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 ssh_session create_ssh_session(int *err, const char *host, int verbosity, int port)
 {
@@ -39,10 +40,10 @@ int verify_ssh_host(ssh_session session)
 	if(hexa == NULL)
 		return BACKUPSSH_HASH_ERR;
 	/*  leave the actual work to another function */
-	return is_host_known(hexa);
+	return is_host_known(session, hexa);
 }
 
-int is_host_known(char *hash)
+int is_host_known(ssh_session session, char *hash)
 {
 	/*  open known hosts file */
 	FILE *fp = fopen("hosts.kwn", "r");
@@ -51,10 +52,30 @@ int is_host_known(char *hash)
 
 	char buf[4096];
 	do {
+		fgets(buf, 4096, fp);
 		fseek(fp, 1, SEEK_CUR);
-		fgets(&buf[0], 4096, fp);
-		if(strcmp(&buf[0], hash) == 0)
+		char *ip, *shash;
+		const char delim[2] = ", ";
+
+		/*  remove trailing newline */
+		strtok(buf, "\n");
+		/*  seperate values */
+		ip = strtok(buf, delim);
+		shash = strtok(NULL, delim);
+
+		/* get remote host ip */
+		char *remote_host;
+		if(ssh_options_get(session, SSH_OPTIONS_HOST, &remote_host)
+				== SSH_ERROR)
+			exit(1);
+
+		/*  now check if they are the same */
+		if(strcmp(ip, remote_host) == 0 && strcmp(shash, hash) == 0)
 			return BACKUPSSH_HOST_KNOWN;
+		if(strcmp(ip, remote_host) == 0 && strcmp(shash, hash) != 0)
+			return BACKUPSSH_HOST_HASH_CHANGED;
+		if(strcmp(ip, remote_host) != 0 && strcmp(shash, hash) == 0)
+			return BACKUPSSH_HOST_IP_CHANGED;
 	} while(fgetc(fp) != EOF);
 
 	return BACKUPSSH_HOST_UNKNOWN;

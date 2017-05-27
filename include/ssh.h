@@ -11,7 +11,7 @@ ssh_session create_ssh_session(int *err, const char *host, int verbosity, int po
 int verify_ssh_host(ssh_session session);
 
 /* checks if the host is known to us */
-int is_host_known(char *hash);
+int is_host_known(ssh_session session, char *hash);
 
 /* authenticates the host with the given method */
 int authenticate_ssh_host(ssh_session session, int method,
