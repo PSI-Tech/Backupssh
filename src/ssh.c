@@ -47,9 +47,10 @@ int is_host_known(ssh_session session, char *hash)
 {
 	/*  open known hosts file */
 	FILE *fp = fopen("hosts.kwn", "r");
-	if(fp == NULL)
+	if(fp == NULL) {
+		fclose(fp);
 		return BACKUPSSH_HOST_UNKNOWN;
-
+	}
 	char buf[4096];
 	do {
 		fgets(buf, 4096, fp);
@@ -70,13 +71,20 @@ int is_host_known(ssh_session session, char *hash)
 			exit(1);
 
 		/*  now check if they are the same */
-		if(strcmp(ip, remote_host) == 0 && strcmp(shash, hash) == 0)
+		if(strcmp(ip, remote_host) == 0 && strcmp(shash, hash) == 0) {
+			fclose(fp);
 			return BACKUPSSH_HOST_KNOWN;
-		if(strcmp(ip, remote_host) == 0 && strcmp(shash, hash) != 0)
+		}
+		if(strcmp(ip, remote_host) == 0 && strcmp(shash, hash) != 0) {
+			fclose(fp);
 			return BACKUPSSH_HOST_HASH_CHANGED;
-		if(strcmp(ip, remote_host) != 0 && strcmp(shash, hash) == 0)
+		}
+		if(strcmp(ip, remote_host) != 0 && strcmp(shash, hash) == 0) {
+			fclose(fp);
 			return BACKUPSSH_HOST_IP_CHANGED;
+		}
 	} while(fgetc(fp) != EOF);
 
+	fclose(fp);
 	return BACKUPSSH_HOST_UNKNOWN;
 }
