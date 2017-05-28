@@ -17,7 +17,7 @@ ssh_session create_ssh_session(int *err, const char *host, int verbosity, int po
 	return session;
 }
 
-int verify_ssh_host(ssh_session session)
+int verify_ssh_host(ssh_session session, char **ret_hash)
 {
 	int err;
 	ssh_key key;
@@ -39,6 +39,10 @@ int verify_ssh_host(ssh_session session)
 	hexa = ssh_get_hexa(hash, hlen);
 	if(hexa == NULL)
 		return BACKUPSSH_HASH_ERR;
+
+	/* give hash back to callee */
+	if(ret_hash)
+		*ret_hash = hexa;
 	/*  leave the actual work to another function */
 	return is_host_known(session, hexa);
 }
@@ -49,6 +53,7 @@ int is_host_known(ssh_session session, char *hash)
 	FILE *fp = fopen("hosts.kwn", "r");
 	if(fp == NULL) {
 		fclose(fp);
+		/* assume that if the file doesn't exist the host is unkown */
 		return BACKUPSSH_HOST_UNKNOWN;
 	}
 	char buf[4096];
@@ -87,4 +92,19 @@ int is_host_known(ssh_session session, char *hash)
 
 	fclose(fp);
 	return BACKUPSSH_HOST_UNKNOWN;
+}
+
+int add_host(const char *host, const char *hash)
+{
+	/* open file for writing */
+	FILE *fp = fopen("hosts.kwn", "w");
+	if(fp == NULL)
+		return BACKUPSSH_FILE_OPEN_ERROR;
+
+	/* write the hosts and hash to the file */
+	fseek(fp, 0, SEEK_END);
+	fprintf(fp, "%s, %s", host, hash);
+	fclose(fp);
+
+	return BACKUPSSH_SUCCESS;
 }

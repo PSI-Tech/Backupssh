@@ -8,10 +8,13 @@
 ssh_session create_ssh_session(int *err, const char *host, int verbosity, int port);
 
 /* verifies if the ssh host is known */
-int verify_ssh_host(ssh_session session);
+int verify_ssh_host(ssh_session session, char **ret_hash);
 
 /* checks if the host is known to us */
 int is_host_known(ssh_session session, char *hash);
+
+/* adds host to known hosts list */
+int add_host(const char *host, const char *hash);
 
 /* authenticates the host with the given method */
 int authenticate_ssh_host(ssh_session session, int method,
