@@ -5,7 +5,7 @@
 #include <error.h>
 
 /* creates an ssh session from the arguments */
-ssh_session create_ssh_session(int *err, const char *host, int verbosity, int port);
+int create_ssh_session(ssh_session *session, const char *host, int verbosity, int port);
 
 /* verifies if the ssh host is known */
 int verify_ssh_host(ssh_session session, char **ret_hash);

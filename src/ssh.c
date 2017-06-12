@@ -4,17 +4,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-ssh_session create_ssh_session(int *err, const char *host, int verbosity, int port)
+int create_ssh_session(ssh_session *session, const char *host, int verbosity, int port)
 {
-	ssh_session session = ssh_new();
+	*session = ssh_new();
 	if(session == NULL)
-		return NULL;
-	ssh_options_set(session, SSH_OPTIONS_HOST, host);
-	ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-	ssh_options_set(session, SSH_OPTIONS_PORT, &port);
+		return BACKUPSSH_SESSION_CREATE;
+	ssh_options_set(*session, SSH_OPTIONS_HOST, host);
+	ssh_options_set(*session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+	ssh_options_set(*session, SSH_OPTIONS_PORT, &port);
 
-	*err = BACKUPSSH_SUCCESS;
-	return session;
+	return BACKUPSSH_SUCCESS;
 }
 
 int verify_ssh_host(ssh_session session, char **ret_hash)
