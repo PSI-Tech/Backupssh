@@ -97,13 +97,62 @@ int add_host(const char *host, const char *hash)
 {
 	/* open file for writing */
 	FILE *fp = fopen("hosts.kwn", "w");
-	if(fp == NULL)
-		return BACKUPSSH_FILE_OPEN_ERROR;
-
+	if(fp == NULL) {
+		fclose(fp);
+		return BACKUPSSH_FILE_OPEN_ERR;
+	}
 	/* write the hosts and hash to the file */
 	fseek(fp, 0, SEEK_END);
 	fprintf(fp, "%s, %s", host, hash);
 	fclose(fp);
 
+	return BACKUPSSH_SUCCESS;
+}
+
+int authenticate_ssh_host(ssh_session session, int method,
+		const char *password, const char *pub_key_file,
+		const char *priv_key_file)
+{
+	int err;
+	switch(method) {
+		case KEY: {
+			ssh_key pub_key = ssh_key_new();
+			err = ssh_pki_import_pubkey_file(pub_key_file,
+					&pub_key);
+			if(err != SSH_OK) {
+				ssh_key_free(pub_key);
+				return BACKUPSSH_PUBKEY_ERR;
+			}
+			err = ssh_userauth_try_publickey(session, "backup",
+					pub_key);
+			if(err != SSH_AUTH_SUCCESS) {
+				ssh_key_free(pub_key);
+				return BACKUPSSH_AUTH_ERR;
+			}
+
+			ssh_key priv_key = ssh_key_new();
+			err = ssh_pki_import_privkey_file(priv_key_file,
+					password, NULL, NULL, &priv_key);
+			if(err != SSH_OK) {
+				ssh_key_free(pub_key);
+				ssh_key_free(priv_key);
+				return BACKUPSSH_PRIVKEY_ERR;
+			}
+
+			err = ssh_userauth_publickey(session, "backup",
+					priv_key);
+			ssh_key_free(pub_key);
+			ssh_key_free(priv_key);
+			if(err != SSH_AUTH_SUCCESS)
+				return BACKUPSSH_AUTH_ERR;
+			return BACKUPSSH_SUCCESS;
+		}
+		case PASSWORD: {
+			err = ssh_userauth_password(session, NULL, password);
+			if(err != SSH_AUTH_SUCCESS)
+				return BACKUPSSH_AUTH_ERR;
+			return BACKUPSSH_SUCCESS;
+		}
+	}
 	return BACKUPSSH_SUCCESS;
 }
